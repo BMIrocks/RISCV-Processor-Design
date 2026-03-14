@@ -1,0 +1,65 @@
+# Machine code for Fibonacci F(10)
+# Big-endian byte order (MSB first per instruction)
+# Use with fibonacci test bench
+
+# addi x8, x0, 10     (0x00A00413)
+00
+A0
+04
+13
+# addi x9, x0, 0      (0x00000493)
+00
+00
+04
+93
+# addi x10, x0, 1     (0x00100513)
+00
+10
+05
+13
+# addi x12, x0, 1     (0x00100613)
+00
+10
+06
+13
+# sub x8, x8, x12     (0x40C40433)
+40
+C4
+04
+33
+# beq x8, x0, +24     (0x00040663)
+00
+04
+06
+63
+# add x11, x9, x10    (0x00A485B3)
+00
+A4
+85
+B3
+# add x9, x10, x0     (0x000504B3)
+00
+05
+04
+B3
+# add x10, x11, x0    (0x00058533)
+00
+05
+85
+33
+# sub x8, x8, x12     (0x40C40433)
+40
+C4
+04
+33
+# beq x0, x0, -20     (0xFE000BE3)
+FE
+00
+0B
+E3
+# sd x10, 0(x0)       (0x00A03023)
+00
+A0
+30
+23
+

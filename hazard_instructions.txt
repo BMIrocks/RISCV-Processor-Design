@@ -1,0 +1,69 @@
+# Comprehensive hazard test instructions
+# Expected final register values shown in comments
+
+# Setup: x1=5, x2=10, x3=15
+addi x1, x0, 5        # x1 = 5
+addi x2, x0, 10       # x2 = 10
+addi x3, x0, 15       # x3 = 15
+
+# TEST 1: EX Hazard on rs1 (ForwardA=10)
+add x4, x1, x2        # x4 = 5+10 = 15
+add x5, x4, x1        # x5 = 15+5 = 20 (FwdA from EX)
+
+# TEST 2: EX Hazard on rs2 (ForwardB=10)
+add x6, x1, x2        # x6 = 5+10 = 15
+add x7, x1, x6        # x7 = 5+15 = 20 (FwdB from EX)
+
+# TEST 3: MEM Hazard on rs1 (ForwardA=01)
+add x8, x1, x2        # x8 = 5+10 = 15
+add x0, x0, x0        # NOP (creates gap)
+add x9, x8, x1        # x9 = 15+5 = 20 (FwdA from WB)
+
+# TEST 4: MEM Hazard on rs2 (ForwardB=01)
+add x10, x1, x2       # x10 = 5+10 = 15
+add x0, x0, x0        # NOP
+add x11, x1, x10      # x11 = 5+15 = 20 (FwdB from WB)
+
+# TEST 5: Double Data Hazard (EX priority over MEM)
+addi x12, x0, 1       # x12 = 1
+addi x12, x12, 2      # x12 = 1+2 = 3 (EX wins over MEM for same dest)
+add x13, x12, x1      # x13 = 3+5 = 8
+
+# TEST 6: Store to memory
+sd x1, 0(x0)          # mem[0] = 5
+
+# TEST 7: Load-Use on rs1 (Stall + ForwardA=01)
+ld x14, 0(x0)         # x14 = mem[0] = 5
+add x15, x14, x2      # x15 = 5+10 = 15 (stall+fwd needed)
+
+# TEST 8: Load-Use on rs2 (Stall + ForwardB=01)
+ld x16, 0(x0)         # x16 = mem[0] = 5
+add x17, x2, x16      # x17 = 10+5 = 15 (stall+fwd needed)
+
+# TEST 9: Store After ALU (ForwardB=10, no stall)
+addi x18, x0, 25      # x18 = 25
+sd x18, 8(x0)         # mem[8] = 25 (FwdB from EX)
+ld x19, 8(x0)         # x19 = mem[8] = 25 (verify store)
+
+# TEST 10: Store After Load (NEW: MEM-to-MEM forwarding, no stall)
+ld x20, 0(x0)         # x20 = mem[0] = 5
+sd x20, 16(x0)        # mem[16] = 5 (MEM-to-MEM forward)
+ld x21, 16(x0)        # x21 = mem[16] = 5 (verify store)
+
+# TEST 11: Branch NOT taken
+beq x1, x2, 8         # x1 != x2, branch not taken
+addi x22, x0, 42      # x22 = 42 (should execute)
+
+# TEST 12: Branch TAKEN
+beq x0, x0, 8         # x0 == x0, branch taken (skip next)
+addi x23, x0, 99      # SKIPPED, x23 stays 0
+addi x24, x0, 77      # x24 = 77 (branch target)
+
+# TEST 13: No hazard (3+ instruction gap)
+addi x25, x0, 3       # x25 = 3
+add x0, x0, x0        # NOP
+add x0, x0, x0        # NOP
+add x26, x25, x1      # x26 = 3+5 = 8 (no forwarding needed)
+
+# End marker
+add x0, x0, x0        # NOP - end
